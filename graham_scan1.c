@@ -5,17 +5,6 @@
 #include "sort.h"
 #include "graham_scan.h"
 
-/*
- * Cross product of the vectors (b - a) and (c - a).
- *   positive : a -> b -> c is a left turn (counterclockwise)
- *   zero     : a, b, c are collinear
- *   negative : a -> b -> c is a right turn (clockwise)
- */
-double crossProduct(Point a, Point b, Point c)
-{
-    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
-
 int grahamScan1(Point points[], int n, Point hull[])
 {
     static Stack s;     /* static so this big struct is not placed on the call stack */
@@ -36,8 +25,8 @@ int grahamScan1(Point points[], int n, Point hull[])
         /* Step 1: find the anchor (lowest y, then lowest x) */
         anchorIndex = findAnchor(points, n);
 
-        /* Step 2: compute polar angles, then sort. The anchor ends up at index 0. */
-        computePolarAngles(points, n, points[anchorIndex]);
+        /* Step 2: sort by polar angle around the anchor. The anchor ends up at index 0. */
+        setAnchor(points, n, points[anchorIndex]);
         insertionSort(points, n);
 
         /* Step 3: scan the sorted points */
@@ -51,8 +40,9 @@ int grahamScan1(Point points[], int n, Point hull[])
             /* skip duplicate points */
             if (p.x != t.x || p.y != t.y) {
 
-                /* pop while the last two points and p do not make a left turn */
-                while (count >= 2 && crossProduct(nextToTop(&s), top(&s), p) <= 0) {
+                /* pop while the last two points and p do not make a left turn.
+                   A cross product within EPSILON of zero counts as collinear. */
+                while (count >= 2 && crossProduct(nextToTop(&s), top(&s), p) <= EPSILON) {
                     pop(&s);
                     count--;
                 }
