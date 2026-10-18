@@ -3,12 +3,12 @@
 #define STACK_H
 
 #define MAX_SIZE 32768   /* 2^15, the maximum problem size */
+#define EPSILON  1e-9    /* tolerance for floating-point rounding errors */
 
-/* A 2D point. The angle and dist fields are filled in before sorting. */
+/* A 2D point. The dist field is filled in before sorting. */
 typedef struct {
     double x;
     double y;
-    double angle;   /* polar angle from the anchor, in radians */
     double dist;    /* squared distance from the anchor */
 } Point;
 
