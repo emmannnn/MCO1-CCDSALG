@@ -5,10 +5,9 @@
 #include "stack.h"
 
 /* Helper functions */
-double crossProduct(Point a, Point b, Point c);
-int    findAnchor(Point points[], int n);
-void   setAnchor(Point points[], int n, Point anchor);
-int    comesBefore(Point a, Point b);
+int  findAnchor(Point points[], int n);
+void computePolarAngles(Point points[], int n, Point anchor);
+int  comesBefore(Point a, Point b);
 
 /* "Slow" sorting algorithm, O(n^2) */
 void insertionSort(Point points[], int n);

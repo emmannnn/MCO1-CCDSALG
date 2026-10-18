@@ -7,7 +7,7 @@
 Point points[MAX_SIZE];
 Point hull[MAX_SIZE];
 
-int main()
+int main(void)
 {
     char inputName[100];
     char outputName[100];
@@ -17,10 +17,16 @@ int main()
 
     /* 1 and 2: ask for the filenames */
     printf("Enter input filename (with extension): ");
-    scanf("%99s", inputName);
+    if (scanf("%99s", inputName) != 1) {
+        printf("Error: no input filename given\n");
+        return 1;
+    }
 
     printf("Enter output filename (with extension): ");
-    scanf("%99s", outputName);
+    if (scanf("%99s", outputName) != 1) {
+        printf("Error: no output filename given\n");
+        return 1;
+    }
 
     /* 3: open the input file */
     inputFile = fopen(inputName, "r");

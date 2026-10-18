@@ -1,9 +1,46 @@
 /* graham_scan1.c - Graham's scan using the "slow" sort (insertion sort) */
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
+#include <float.h>
 #include "stack.h"
 #include "sort.h"
 #include "graham_scan.h"
+
+#define TURN_EPS (512.0L * DBL_EPSILON) /* scale-aware tolerance for double rounding noise */
+
+/*
+ * Returns 1 only for a counterclockwise turn that is larger than estimated
+ * floating-point rounding noise. The vectors are normalized before the
+ * cross product, avoiding the old fixed 1e-10 angular cutoff and reducing
+ * overflow/underflow risk. This preserves genuine small turns much better.
+ */
+static int isLeftTurn(Point a, Point b, Point c)
+{
+    long double abx = (long double)b.x - (long double)a.x;
+    long double aby = (long double)b.y - (long double)a.y;
+    long double acx = (long double)c.x - (long double)a.x;
+    long double acy = (long double)c.y - (long double)a.y;
+    long double abScale = fmaxl(fabsl(abx), fabsl(aby));
+    long double acScale = fmaxl(fabsl(acx), fabsl(acy));
+    long double u1x, u1y, u2x, u2y;
+    long double cross, lengths;
+
+    /* Repeated points cannot form a strict turn. */
+    if (abScale == 0.0L || acScale == 0.0L)
+        return 0;
+
+    u1x = abx / abScale;
+    u1y = aby / abScale;
+    u2x = acx / acScale;
+    u2y = acy / acScale;
+
+    cross = u1x * u2y - u1y * u2x;
+    lengths = sqrtl(u1x * u1x + u1y * u1y) *
+              sqrtl(u2x * u2x + u2y * u2y);
+
+    return cross > TURN_EPS * lengths;
+}
 
 int grahamScan1(Point points[], int n, Point hull[])
 {
@@ -25,8 +62,8 @@ int grahamScan1(Point points[], int n, Point hull[])
         /* Step 1: find the anchor (lowest y, then lowest x) */
         anchorIndex = findAnchor(points, n);
 
-        /* Step 2: sort by polar angle around the anchor. The anchor ends up at index 0. */
-        setAnchor(points, n, points[anchorIndex]);
+        /* Step 2: compute polar angles, then sort. The anchor ends up at index 0. */
+        computePolarAngles(points, n, points[anchorIndex]);
         insertionSort(points, n);
 
         /* Step 3: scan the sorted points */
@@ -40,9 +77,8 @@ int grahamScan1(Point points[], int n, Point hull[])
             /* skip duplicate points */
             if (p.x != t.x || p.y != t.y) {
 
-                /* pop while the last two points and p do not make a left turn.
-                   A cross product within EPSILON of zero counts as collinear. */
-                while (count >= 2 && crossProduct(nextToTop(&s), top(&s), p) <= EPSILON) {
+                /* pop while the last two points and p do not make a left turn */
+                while (count >= 2 && !isLeftTurn(nextToTop(&s), top(&s), p)) {
                     pop(&s);
                     count--;
                 }
