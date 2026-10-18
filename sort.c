@@ -1,22 +1,9 @@
 /* sort.c - insertion sort, merge sort, and polar angle helper functions */
+#include <math.h>
 #include "sort.h"
 
 /* Temporary array used by merge sort when merging two halves */
 static Point temp[MAX_SIZE];
-
-/* The anchor point P0. It is saved here so comesBefore() can use it. */
-static Point anchorPoint;
-
-/*
- * Cross product of the vectors (b - a) and (c - a).
- *   positive : a -> b -> c is a left turn (counterclockwise)
- *   zero     : a, b, c are collinear
- *   negative : a -> b -> c is a right turn (clockwise)
- */
-double crossProduct(Point a, Point b, Point c)
-{
-    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
 
 /*
  * Returns the index of the anchor point.
@@ -42,49 +29,47 @@ int findAnchor(Point points[], int n)
 }
 
 /*
- * Saves the anchor and computes the squared distance of every point
- * from the anchor. The anchor itself gets distance 0, so after sorting
+ * Computes the polar angle and the squared distance of every point
+ * with respect to the anchor.
+ *
+ * Since the anchor is the lowest point, all angles are from 0 to pi.
+ * The anchor itself gets angle 0 and distance 0, so after sorting
  * it will always end up at index 0.
  */
-void setAnchor(Point points[], int n, Point anchor)
+void computePolarAngles(Point points[], int n, Point anchor)
 {
     int i;
     double dx, dy;
 
-    anchorPoint = anchor;
-
     for (i = 0; i < n; i++) {
         dx = points[i].x - anchor.x;
         dy = points[i].y - anchor.y;
+
+        points[i].angle = atan2(dy, dx);
         points[i].dist = dx * dx + dy * dy;   /* no need for sqrt when only comparing */
     }
 }
 
 /*
  * Returns 1 if point a should come before point b in the sorted order.
- * The point with the smaller polar angle (measured from the anchor) goes first.
- * If both have the same polar angle, the point closer to the anchor goes first.
- *
- * Instead of computing the angles with atan2(), we compare them using the
- * cross product. If b is counterclockwise from a (as seen from the anchor),
- * the cross product is positive, so a has the smaller polar angle.
- * This gives the same order as sorting by angle, but avoids the rounding
- * errors of atan2(). Since the anchor is the lowest point, every polar
- * angle is between 0 and pi, so this comparison always works.
+ * Smaller polar angle goes first.
+ * If the angles are equal, the point closer to the anchor goes first.
  */
 int comesBefore(Point a, Point b)
 {
-    double cross = crossProduct(anchorPoint, a, b);
-
-    if (cross > EPSILON)        /* b is counterclockwise from a */
+    /*
+     * Do not use an epsilon when comparing sort keys. An epsilon-based
+     * comparison can be non-transitive (a < b, b < c, but c < a), which
+     * violates the ordering required by insertion sort and merge sort.
+     * Compare the computed angles directly, then use distance only when
+     * the angle values are exactly equal.
+     */
+    if (a.angle < b.angle)
         return 1;
-    if (cross < -EPSILON)       /* b is clockwise from a */
+    if (a.angle > b.angle)
         return 0;
 
-    /* same polar angle (collinear with the anchor): closer point first */
-    if (a.dist < b.dist)
-        return 1;
-    return 0;
+    return a.dist < b.dist;
 }
 
 /* ---------- SLOW: insertion sort ---------- */
@@ -110,7 +95,7 @@ void insertionSort(Point points[], int n)
 /* ---------- FAST: merge sort ---------- */
 
 /* Merges the sorted halves points[left..mid] and points[mid+1..right] */
-void merge(Point points[], int left, int mid, int right)
+static void merge(Point points[], int left, int mid, int right)
 {
     int i = left;       /* index for the left half */
     int j = mid + 1;    /* index for the right half */

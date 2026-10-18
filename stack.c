@@ -43,6 +43,7 @@ Point pop(Stack *s)
 
     elem.x = 0.0;
     elem.y = 0.0;
+    elem.angle = 0.0;
     elem.dist = 0.0;
 
     if (isEmpty(s)) {
@@ -62,6 +63,7 @@ Point top(Stack *s)
 
     elem.x = 0.0;
     elem.y = 0.0;
+    elem.angle = 0.0;
     elem.dist = 0.0;
 
     if (isEmpty(s)) {
@@ -79,6 +81,7 @@ Point nextToTop(Stack *s)
 
     elem.x = 0.0;
     elem.y = 0.0;
+    elem.angle = 0.0;
     elem.dist = 0.0;
 
     if (s->topIndex < 1) {
